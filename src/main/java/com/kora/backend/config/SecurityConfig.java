@@ -3,6 +3,9 @@ package com.kora.backend.config;
 import com.kora.backend.security.JwtAuthenticationFilter;
 import com.kora.backend.security.RestAccessDeniedHandler;
 import com.kora.backend.security.RestAuthenticationEntryPoint;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +21,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 @EnableConfigurationProperties({
 		JwtProperties.class,
 		VerificationProperties.class,
@@ -28,16 +32,6 @@ public class SecurityConfig {
 	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	private final RestAuthenticationEntryPoint authenticationEntryPoint;
 	private final RestAccessDeniedHandler accessDeniedHandler;
-
-	public SecurityConfig(
-			JwtAuthenticationFilter jwtAuthenticationFilter,
-			RestAuthenticationEntryPoint authenticationEntryPoint,
-			RestAccessDeniedHandler accessDeniedHandler) {
-
-		this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-		this.authenticationEntryPoint = authenticationEntryPoint;
-		this.accessDeniedHandler = accessDeniedHandler;
-	}
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

@@ -3,6 +3,8 @@ package com.kora.backend.security;
 import com.kora.backend.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -14,13 +16,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @Component
+@RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
 	private final JsonMapper jsonMapper;
-
-	public RestAuthenticationEntryPoint(JsonMapper jsonMapper) {
-		this.jsonMapper = jsonMapper;
-	}
 
 	@Override
 	public void commence(

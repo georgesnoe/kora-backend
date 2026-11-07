@@ -7,6 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,6 +21,7 @@ import java.io.IOException;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private static final String BEARER_PREFIX = "Bearer ";
@@ -27,11 +30,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
 	private final SessionRepository sessionRepository;
-
-	public JwtAuthenticationFilter(JwtService jwtService, SessionRepository sessionRepository) {
-		this.jwtService = jwtService;
-		this.sessionRepository = sessionRepository;
-	}
 
 	@Override
 	protected void doFilterInternal(
@@ -54,16 +52,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 							jwt.getClaimAsString(EMAIL_CLAIM),
 							sessionId);
 
-					UsernamePasswordAuthenticationToken authentication =
-							UsernamePasswordAuthenticationToken.authenticated(
-									principal, null, List.of());
+					UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken.authenticated(
+							principal, null, List.of());
 					authentication.setDetails(
 							new WebAuthenticationDetailsSource().buildDetails(request));
 
 					SecurityContextHolder.getContext().setAuthentication(authentication);
 				}
-			}
-			catch (InvalidTokenException exception) {
+			} catch (InvalidTokenException exception) {
 				SecurityContextHolder.clearContext();
 			}
 		}

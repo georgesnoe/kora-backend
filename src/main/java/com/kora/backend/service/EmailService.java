@@ -6,6 +6,8 @@ import com.kora.backend.entity.User;
 import com.kora.backend.exception.EmailSendingException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -20,24 +22,13 @@ import java.time.Year;
 import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
 	private final JavaMailSender mailSender;
 	private final SpringTemplateEngine templateEngine;
 	private final MailProperties mailProperties;
 	private final VerificationProperties verificationProperties;
-
-	public EmailService(
-			JavaMailSender mailSender,
-			SpringTemplateEngine templateEngine,
-			MailProperties mailProperties,
-			VerificationProperties verificationProperties) {
-
-		this.mailSender = mailSender;
-		this.templateEngine = templateEngine;
-		this.mailProperties = mailProperties;
-		this.verificationProperties = verificationProperties;
-	}
 
 	public void sendVerificationEmail(User user, String code) {
 		Context context = new Context(Locale.getDefault());
@@ -61,8 +52,7 @@ public class EmailService {
 			helper.setText(html, true);
 
 			mailSender.send(message);
-		}
-		catch (MessagingException | UnsupportedEncodingException | MailException exception) {
+		} catch (MessagingException | UnsupportedEncodingException | MailException exception) {
 			throw new EmailSendingException(
 					"Could not send verification email to " + user.getEmail(), exception);
 		}

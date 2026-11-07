@@ -6,6 +6,9 @@ import com.kora.backend.entity.Verification;
 import com.kora.backend.exception.VerificationException;
 import com.kora.backend.repository.VerificationRepository;
 import com.kora.backend.util.HashingUtils;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,19 +17,12 @@ import java.time.Instant;
 import java.util.Locale;
 
 @Service
+@RequiredArgsConstructor
 public class VerificationService {
 
 	private final VerificationRepository verificationRepository;
 	private final VerificationProperties properties;
 	private final SecureRandom secureRandom = new SecureRandom();
-
-	public VerificationService(
-			VerificationRepository verificationRepository,
-			VerificationProperties properties) {
-
-		this.verificationRepository = verificationRepository;
-		this.properties = properties;
-	}
 
 	@Transactional
 	public String createVerification(User user) {

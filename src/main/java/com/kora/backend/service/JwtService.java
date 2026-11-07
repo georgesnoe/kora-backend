@@ -111,8 +111,7 @@ public class JwtService {
 			}
 
 			return jwt;
-		}
-		catch (JwtException | IllegalArgumentException exception) {
+		} catch (JwtException | IllegalArgumentException exception) {
 			throw new InvalidTokenException("Invalid or expired token");
 		}
 	}
