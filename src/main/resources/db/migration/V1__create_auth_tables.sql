@@ -1,47 +1,50 @@
-CREATE TABLE IF NOT EXISTS "user" (
-    "id" text NOT NULL PRIMARY KEY,
-    "name" text NOT NULL,
-    "email" text NOT NULL UNIQUE,
-    "emailVerified" boolean NOT NULL,
-    "image" text,
-    "createdAt" timestamptz NOT NULL,
-    "updatedAt" timestamptz NOT NULL
+CREATE TABLE IF NOT EXISTS "users" (
+  "id" VARCHAR(36) NOT NULL PRIMARY KEY,
+  "name" VARCHAR(255) NOT NULL,
+  "email" VARCHAR(255) NOT NULL UNIQUE,
+  "emailVerified" BOOLEAN NOT NULL,
+  "image" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL,
+  "updatedAt" TIMESTAMPTZ NOT NULL
 );
-CREATE TABLE IF NOT EXISTS "session" (
-    "id" text NOT NULL PRIMARY KEY,
-    "userId" text NOT NULL,
-    "token" text NOT NULL UNIQUE,
-    "expiresAt" timestamptz NOT NULL,
-    "ipAddress" text,
-    "userAgent" text,
-    "createdAt" timestamptz NOT NULL,
-    "updatedAt" timestamptz NOT NULL,
-    FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE
+CREATE TABLE IF NOT EXISTS "sessions" (
+  "id" VARCHAR(36) NOT NULL PRIMARY KEY,
+  "userId" VARCHAR(36) NOT NULL,
+  "token" TEXT NOT NULL UNIQUE,
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  "ipAddress" VARCHAR(45),
+  "userAgent" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL,
+  "updatedAt" TIMESTAMPTZ NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS "session_userId_idx" ON "session" ("userId");
-CREATE TABLE IF NOT EXISTS "account" (
-    "id" text NOT NULL PRIMARY KEY,
-    "userId" text NOT NULL,
-    "accountId" text NOT NULL,
-    "providerId" text NOT NULL,
-    "accessToken" text,
-    "refreshToken" text,
-    "accessTokenExpiresAt" timestamptz,
-    "refreshTokenExpiresAt" timestamptz,
-    "scope" text,
-    "idToken" text,
-    "password" text,
-    "createdAt" timestamptz NOT NULL,
-    "updatedAt" timestamptz NOT NULL,
-    FOREIGN KEY ("userId") REFERENCES "user" ("id") ON DELETE CASCADE
+CREATE INDEX IF NOT EXISTS "sessions_userId_idx" ON "sessions" ("userId");
+CREATE TABLE IF NOT EXISTS "accounts" (
+  "id" VARCHAR(36) NOT NULL PRIMARY KEY,
+  "userId" VARCHAR(36) NOT NULL,
+  "accountId" VARCHAR(255) NOT NULL,
+  "providerId" VARCHAR(255) NOT NULL,
+  "accessToken" TEXT,
+  "refreshToken" TEXT,
+  "accessTokenExpiresAt" TIMESTAMPTZ,
+  "refreshTokenExpiresAt" TIMESTAMPTZ,
+  "scope" TEXT,
+  "idToken" TEXT,
+  "password" TEXT,
+  "createdAt" TIMESTAMPTZ NOT NULL,
+  "updatedAt" TIMESTAMPTZ NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS "account_userId_idx" ON "account" ("userId");
-CREATE TABLE IF NOT EXISTS "verification" (
-    "id" text NOT NULL PRIMARY KEY,
-    "identifier" text NOT NULL,
-    "value" text NOT NULL,
-    "expiresAt" timestamptz NOT NULL,
-    "createdAt" timestamptz NOT NULL,
-    "updatedAt" timestamptz NOT NULL
+CREATE INDEX IF NOT EXISTS "accounts_userId_idx" ON "accounts" ("userId");
+CREATE TABLE IF NOT EXISTS "verifications" (
+  "id" VARCHAR(36) NOT NULL PRIMARY KEY,
+  "userId" VARCHAR(36) NOT NULL,
+  "identifier" VARCHAR(255) NOT NULL,
+  "value" TEXT NOT NULL,
+  "expiresAt" TIMESTAMPTZ NOT NULL,
+  "createdAt" TIMESTAMPTZ NOT NULL,
+  "updatedAt" TIMESTAMPTZ NOT NULL,
+  FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS "verification_identifier_idx" ON "verification" ("identifier");
+CREATE INDEX IF NOT EXISTS "verifications_identifier_idx" ON "verifications" ("identifier");
+CREATE INDEX IF NOT EXISTS "verifications_userId_idx" ON "verifications" ("userId");

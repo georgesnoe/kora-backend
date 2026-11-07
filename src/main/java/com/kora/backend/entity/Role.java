@@ -22,7 +22,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "role")
+@Table(name = "roles")
 public class Role extends BaseEntity {
 
 	@Column(name = "name", nullable = false, unique = true)
@@ -35,7 +35,7 @@ public class Role extends BaseEntity {
 	private boolean superAdminOnly;
 
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "role_permission", joinColumns = @JoinColumn(name = "roleId", nullable = false), inverseJoinColumns = @JoinColumn(name = "permissionId", nullable = false))
+	@JoinTable(name = "roles_permissions", joinColumns = @JoinColumn(name = "roleId", nullable = false), inverseJoinColumns = @JoinColumn(name = "permissionId", nullable = false))
 	private Set<Permission> permissions = new LinkedHashSet<>();
 
 	public void addPermission(Permission permission) {

@@ -3,17 +3,20 @@ spring:
     name: Kora
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/kora}
-    username: ${DB_USERNAME:kora}
-    password: ${DB_PASSWORD:kora}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
     properties:
       hibernate:
+        globally_quoted_identifiers: true
         jdbc:
           time_zone: UTC
         default_batch_fetch_size: 50

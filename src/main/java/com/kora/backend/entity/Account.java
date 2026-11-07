@@ -20,12 +20,8 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "account")
+@Table(name = "accounts")
 public class Account extends BaseEntity {
-
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "userId", nullable = false)
-	private User user;
 
 	@Column(name = "accountId", nullable = false)
 	private String accountId;
@@ -53,5 +49,9 @@ public class Account extends BaseEntity {
 
 	@Column(name = "password")
 	private String password;
+
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "userId", nullable = false)
+	private User user;
 
 }

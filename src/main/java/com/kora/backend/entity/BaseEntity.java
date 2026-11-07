@@ -11,6 +11,10 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SourceType;
+import org.hibernate.annotations.UpdateTimestamp;
+
 @Getter
 @Setter
 @MappedSuperclass
@@ -21,9 +25,11 @@ public abstract class BaseEntity {
 	private String id;
 
 	@Column(name = "createdAt", nullable = false, updatable = false)
+	@CreationTimestamp(source = SourceType.DB)
 	private Instant createdAt;
 
 	@Column(name = "updatedAt", nullable = false)
+	@UpdateTimestamp(source = SourceType.DB)
 	private Instant updatedAt;
 
 	@PrePersist

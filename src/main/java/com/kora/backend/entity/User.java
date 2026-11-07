@@ -22,7 +22,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class User extends BaseEntity {
 
 	@Column(name = "name", nullable = false)
@@ -38,7 +38,7 @@ public class User extends BaseEntity {
 	private String image;
 
 	@ManyToMany(fetch = FetchType.LAZY)
-	@JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "userId", nullable = false), inverseJoinColumns = @JoinColumn(name = "roleId", nullable = false))
+	@JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "userId", nullable = false), inverseJoinColumns = @JoinColumn(name = "roleId", nullable = false))
 	private Set<Role> roles = new LinkedHashSet<>();
 
 	public void addRole(Role role) {
