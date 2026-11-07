@@ -39,6 +39,7 @@ public class User extends BaseEntity {
 
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "userId", nullable = false), inverseJoinColumns = @JoinColumn(name = "roleId", nullable = false))
+	@Builder.Default
 	private Set<Role> roles = new LinkedHashSet<>();
 
 	public void addRole(Role role) {

@@ -38,6 +38,7 @@ public class Enterprise extends BaseEntity {
 
   @OneToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "enterprises_users", joinColumns = @JoinColumn(name = "enterpriseId", nullable = false), inverseJoinColumns = @JoinColumn(name = "userId", nullable = false))
+  @Builder.Default
   private Set<User> users = new LinkedHashSet<>();
 
   public void addUser(User user) {
