@@ -103,7 +103,7 @@ backend/
     ├── main/
     │   ├── java/com/kora/backend/
     │   │   ├── BackendApplication.java
-    │   │   ├── config/             # Jwt/Mail/Verification properties, SecurityConfig
+    │   │   ├── config/             # Jwt/Mail/Verification properties, SecurityConfig, OpenApiConfig
     │   │   ├── controller/         # AuthController
     │   │   ├── dto/
     │   │   │   ├── request/        # Sign-up, sign-in, refresh, sign-out, verify, resend
@@ -118,7 +118,7 @@ backend/
     │       ├── application.yaml
     │       ├── db/migration/       # V1, V2, V3 Flyway migrations
     │       └── templates/email/    # verify-account.html
-    └── test/java/com/kora/backend/ # Spring context test
+    └── test/java/com/kora/backend/ # Spring context test + OpenAPI generation test
 ```
 
 ---
@@ -150,10 +150,14 @@ docker compose up -d
 
 # 3. Health check
 curl http://localhost:8080/actuator/health
+
+# 4. Interactive API documentation
+# http://localhost:8080/swagger-ui.html
 ```
 
 The API is available at <http://localhost:8080/api>. Emails sent during registration are captured
-by Mailpit at <http://localhost:8025>.
+by Mailpit at <http://localhost:8025>. The generated OpenAPI description is served at
+<http://localhost:8080/v3/api-docs.yaml>.
 
 Typical first flow:
 
@@ -190,6 +194,8 @@ only.
 | `VERIFICATION_TTL` | `PT24H` | Verification code lifetime |
 | `VERIFICATION_URL` | `http://localhost:8080/api/auth/verify` | Base URL embedded in verification emails |
 | `SERVER_PORT` | `8080` | HTTP port (standard Spring Boot variable) |
+| `SPRINGDOC_API_DOCS_ENABLED` | `true` | Expose `/v3/api-docs` and `/v3/api-docs.yaml` |
+| `SPRINGDOC_SWAGGER_UI_ENABLED` | `true` | Expose the Swagger UI at `/swagger-ui.html` |
 
 > **Production:** provide a random `JWT_SECRET` of at least 32 bytes, use TLS for SMTP, and point
 > `VERIFICATION_URL` at the public API host.
@@ -294,15 +300,17 @@ error is not a field-validation error.
 | --- | --- | --- | --- | --- |
 | `POST` | `/api/auth/sign-up` | Public | `201` | Create an account and send a verification email |
 | `POST` | `/api/auth/sign-in` | Public | `200` | Authenticate and create a session |
-| `POST` | `/api/auth/refresh` | Public (refresh token in body) | `200` | Rotate the refresh token and issue a new access token |
-| `POST` | `/api/auth/sign-out` | Optional access token and/or refresh token | `200` | Revoke a session |
+| `POST` | `/api/auth/refresh` | Bearer access token | `200` | Rotate the refresh token and issue a new access token |
+| `POST` | `/api/auth/sign-out` | Bearer access token | `200` | Revoke a session |
 | `POST` | `/api/auth/verify` | Public | `200` | Verify an email address with a JSON body |
 | `GET` | `/api/auth/verify` | Public | `200` | Verify an email address from a link |
-| `POST` | `/api/auth/resend-verification` | Public | `200` | Re-send a verification email |
+| `POST` | `/api/auth/resend-verification` | Bearer access token | `200` | Re-send a verification email |
 | `GET` | `/actuator/health` | Public | `200` | Service health |
 
-All `/api/auth/**` routes listed above are explicitly public. Any other route requires a valid
-access token.
+Public routes are `/api/auth/sign-up`, `/api/auth/sign-in`, and both `/api/auth/verify` variants.
+`/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification` require a valid
+access token; the caller's email-verification status is not checked by the security layer. Any other
+route requires a valid access token.
 
 ---
 
@@ -425,7 +433,12 @@ Errors:
 ```http
 POST /api/auth/refresh
 Content-Type: application/json
+Authorization: Bearer <accessToken>
 ```
+
+The caller must be authenticated with a valid access token. The access token's session must still
+exist. If the access token has expired, the endpoint returns `401` and the client must sign in
+again; a refresh token by itself is not accepted.
 
 Request:
 
@@ -460,6 +473,7 @@ Errors:
 | Status | Code | Cause |
 | --- | --- | --- |
 | `400` | `VALIDATION_FAILED` | Missing/blank `refreshToken` |
+| `401` | `UNAUTHORIZED` | Missing or invalid access token |
 | `401` | `INVALID_TOKEN` | Token malformed, expired, wrong type, revoked, or session mismatch |
 
 ---
@@ -469,8 +483,10 @@ Errors:
 ```http
 POST /api/auth/sign-out
 Content-Type: application/json
-Authorization: Bearer <accessToken>   (optional if refreshToken is supplied)
+Authorization: Bearer <accessToken>
 ```
+
+Authentication is required; a missing or invalid access token returns `401 UNAUTHORIZED`.
 
 Request body (optional):
 
@@ -484,7 +500,6 @@ Behavior:
 
 1. If a non-blank `refreshToken` is supplied, the matching session is deleted (if it exists).
 2. Otherwise, the session identified by the access token's `sid` claim is deleted.
-3. If neither is available, the request fails with `401 UNAUTHORIZED`.
 
 Response `200 OK`:
 
@@ -502,7 +517,7 @@ Errors:
 
 | Status | Code | Cause |
 | --- | --- | --- |
-| `401` | `UNAUTHORIZED` | No refresh token and no valid access token |
+| `401` | `UNAUTHORIZED` | Missing or invalid access token |
 
 ---
 
@@ -567,7 +582,11 @@ curl "http://localhost:8080/api/auth/verify?identifier=ada%40example.com&code=12
 ```http
 POST /api/auth/resend-verification
 Content-Type: application/json
+Authorization: Bearer <accessToken>
 ```
+
+Authentication is required; a missing or invalid access token returns `401 UNAUTHORIZED`. The
+security layer does not check whether the caller's email has been verified.
 
 Request:
 
@@ -591,11 +610,16 @@ Behavior:
 - If the account does not exist or is already verified, nothing is sent.
 - The response is identical in all cases.
 
+> **Note:** sign-in currently rejects unverified accounts with `403 EMAIL_NOT_VERIFIED`. Since this
+> endpoint now requires an access token, an unverified user cannot call it until the sign-in policy
+> is relaxed or a separate unauthenticated resend flow is added.
+
 Errors:
 
 | Status | Code | Cause |
 | --- | --- | --- |
 | `400` | `VALIDATION_FAILED` | Missing/invalid email |
+| `401` | `UNAUTHORIZED` | Missing or invalid access token |
 
 ---
 
@@ -616,6 +640,54 @@ Response `200 OK`:
 
 Health probes are available at `/actuator/health/liveness` and `/actuator/health/readiness`. The
 endpoint and its subpaths are public; every other Actuator endpoint is not exposed.
+
+---
+
+## OpenAPI documentation
+
+OpenAPI 3.1 documentation is generated by `springdoc-openapi` from annotations on the controllers
+and DTOs.
+
+| Resource | Location |
+| --- | --- |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
+| OpenAPI YAML | `http://localhost:8080/v3/api-docs.yaml` |
+| Build artifact | `target/openapi.yaml` |
+
+All documentation endpoints are public (explicitly permitted in `SecurityConfig`).
+
+### Build-time generation
+
+`OpenApiDocumentationTest` boots the application on a random port, downloads
+`/v3/api-docs.yaml`, verifies that the expected auth paths and the `bearerAuth` scheme are present,
+and writes the result to `target/openapi.yaml`. The test runs during the Maven `test` phase, so:
+
+```bash
+./mvnw verify
+# target/openapi.yaml now contains the complete specification
+```
+
+CI uploads this file as the `openapi-spec` artifact. The specification includes every route,
+request/response schema, documented status code, and the `bearerAuth` requirement for protected
+operations.
+
+### Annotations used
+
+- `@OpenAPIDefinition` — API title, version, description, contact, tags, and servers
+- `@SecurityScheme(name = "bearerAuth")` — HTTP bearer JWT security scheme
+- `@Tag`, `@Operation`, `@Parameter`, `@ApiResponse(s)` — controller documentation
+- `@Schema` — DTO field descriptions, examples, constraints, and write-only secrets
+
+To disable the documentation in a hardened environment:
+
+```yaml
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+```
 
 ---
 
@@ -833,15 +905,18 @@ orchestrator level against `GET /actuator/health` rather than relying on an in-i
 2. Sets up Temurin JDK 25 with Maven caching.
 3. Starts a PostgreSQL 17 service container.
 4. Runs `./mvnw -B -ntp verify` (compile + tests against the service database).
-5. Uploads Surefire reports and the application jar as artifacts.
+5. Asserts that `target/openapi.yaml` was generated, contains the expected paths, and uploads it as
+   the `openapi-spec` artifact.
+6. Uploads Surefire reports and the application jar as artifacts.
 
 **Job `docker`**
 
 1. Builds the image with Buildx and GitHub Actions layer caching.
-2. Loads it locally.
+2. Loads it locally and asserts it runs as UID/GID `10001:10001` with no `/bin/sh`.
 3. Starts PostgreSQL and runs the container on the host network.
-4. Polls `GET /actuator/health` until it reports `"status":"UP"`, then prints logs and fails the job
-   if the container does not become healthy.
+4. Polls `GET /actuator/health` until it reports `"status":"UP"`.
+5. Verifies that `/v3/api-docs.yaml` is served and that a protected endpoint
+   (`/api/auth/refresh`) returns `401` without a token.
 
 **Job `publish`**
 
@@ -862,6 +937,10 @@ secret is needed; `GITHUB_TOKEN` is provided by GitHub.
 - Store `JWT_SECRET` in a secret manager; never commit production secrets. Minimum length is
   enforced in code (32 bytes).
 - Access tokens are short-lived; refresh tokens rotate and are stored only as SHA-256 hashes.
+- `/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification` require a valid
+  access token. Email-verification status is not part of the authorization decision.
+- Because refresh requires a valid access token, a client whose access token has expired must sign
+  in again rather than refreshing.
 - Deleting a session revokes both token types because access-token authentication checks the session.
 - Passwords are hashed with BCrypt. Password length is capped at 72 characters (BCrypt limit).
 - Resend-verification responses do not reveal whether an account exists.
@@ -869,6 +948,9 @@ secret is needed; `GITHUB_TOKEN` is provided by GitHub.
 - Sign-in accepts `X-Forwarded-For`; only trust this header when a trusted reverse proxy sets it.
 - The service is stateless and CSRF-disabled by design: do not add cookie-based authentication
   without reintroducing CSRF protection.
+- `/v3/api-docs/**` and `/swagger-ui/**` are public. Disable them in production with
+  `SPRINGDOC_API_DOCS_ENABLED=false` and `SPRINGDOC_SWAGGER_UI_ENABLED=false` if they must not be
+  exposed.
 - Run behind TLS in production. The distroless image contains no shell, which reduces the attack
   surface for remote code execution.
 

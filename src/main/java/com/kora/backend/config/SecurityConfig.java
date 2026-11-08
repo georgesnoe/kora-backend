@@ -49,14 +49,19 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST,
 								"/api/auth/sign-up",
 								"/api/auth/sign-in",
-								"/api/auth/refresh",
-								"/api/auth/sign-out",
-								"/api/auth/verify",
-								"/api/auth/resend-verification")
+								"/api/auth/verify")
 						.permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/auth/verify")
 						.permitAll()
-						.requestMatchers("/actuator/health", "/actuator/health/**", "/error")
+						.requestMatchers(
+								"/actuator/health",
+								"/actuator/health/**",
+								"/error",
+								"/v3/api-docs",
+								"/v3/api-docs/**",
+								"/v3/api-docs.yaml",
+								"/swagger-ui.html",
+								"/swagger-ui/**")
 						.permitAll()
 						.anyRequest()
 						.authenticated())

@@ -9,8 +9,7 @@ public record JwtProperties(
 		String secret,
 		String issuer,
 		Duration accessTokenTtl,
-		Duration refreshTokenTtl
-) {
+		Duration refreshTokenTtl) {
 
 	public JwtProperties {
 		if (issuer == null || issuer.isBlank()) {

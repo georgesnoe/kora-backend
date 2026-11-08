@@ -8,8 +8,7 @@ import java.time.Duration;
 public record VerificationProperties(
 		Integer codeLength,
 		Duration ttl,
-		String verifyUrl
-) {
+		String verifyUrl) {
 
 	public VerificationProperties {
 		if (codeLength == null || codeLength < 4) {
