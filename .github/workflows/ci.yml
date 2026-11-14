@@ -119,6 +119,12 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
+      mailpit:
+        image: axllent/mailpit:v1.33
+        ports:
+          - 1025:1025
+          - 8025:8025
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -154,6 +160,8 @@ jobs:
             -e DB_URL=jdbc:postgresql://localhost:5432/postgres \
             -e DB_USERNAME=postgres \
             -e DB_PASSWORD=postgres \
+            -e MAIL_HOST=localhost \
+            -e MAIL_PORT=1025 \
             -e JWT_SECRET=ci-smoke-test-secret-key-with-at-least-32-bytes \
             "$IMAGE_NAME:ci"
 

@@ -956,8 +956,9 @@ orchestrator level against `GET /actuator/health` rather than relying on an in-i
 
 1. Builds the image with Buildx and GitHub Actions layer caching.
 2. Loads it locally and asserts it runs as UID/GID `10001:10001` with no `/bin/sh`.
-3. Starts PostgreSQL and runs the container on the host network.
-4. Polls `GET /actuator/health` until it reports `"status":"UP"`.
+3. Starts PostgreSQL and Mailpit and runs the container on the host network.
+4. Polls `GET /actuator/health` until it reports `"status":"UP"`. The health group includes the
+   database and SMTP checks, which is why Mailpit is part of the job.
 5. Verifies that `/v3/api-docs.yaml` is served and that protected endpoints
    (`/api/auth/me`, `/api/auth/refresh`, `/api/auth/sign-out`, `/api/auth/resend-verification`)
    return `401` without a token.
