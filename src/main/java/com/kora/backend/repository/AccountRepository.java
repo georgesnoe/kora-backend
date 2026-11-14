@@ -10,8 +10,8 @@ public interface AccountRepository extends JpaRepository<Account, String> {
 
 	Optional<Account> findByProviderIdAndAccountId(String providerId, String accountId);
 
-	List<Account> findAllByUser_Id(String userId);
+	List<Account> findAllByUserId(String userId);
 
-	Optional<Account> findByUser_IdAndProviderId(String userId, String providerId);
+	Optional<Account> findByUserIdAndProviderId(String userId, String providerId);
 
 }

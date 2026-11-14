@@ -11,9 +11,9 @@ public interface SessionRepository extends JpaRepository<Session, String> {
 
 	Optional<Session> findByToken(String token);
 
-	List<Session> findAllByUser_Id(String userId);
+	List<Session> findAllByUserId(String userId);
 
-	long deleteByUser_Id(String userId);
+	long deleteByUserId(String userId);
 
 	long deleteByExpiresAtBefore(Instant cutoff);
 

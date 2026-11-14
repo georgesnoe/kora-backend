@@ -36,6 +36,7 @@ public class Role extends BaseEntity {
 
 	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(name = "roles_permissions", joinColumns = @JoinColumn(name = "roleId", nullable = false), inverseJoinColumns = @JoinColumn(name = "permissionId", nullable = false))
+	@Builder.Default
 	private Set<Permission> permissions = new LinkedHashSet<>();
 
 	public void addPermission(Permission permission) {

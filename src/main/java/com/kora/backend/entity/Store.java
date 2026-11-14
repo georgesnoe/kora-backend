@@ -35,6 +35,7 @@ public class Store extends BaseEntity {
 
   @OneToMany(fetch = FetchType.LAZY)
   @JoinTable(name = "store_users", joinColumns = @JoinColumn(name = "storeId", nullable = false), inverseJoinColumns = @JoinColumn(name = "userId", nullable = false))
+  @Builder.Default
   private Set<User> users = new LinkedHashSet<>();
 
   public void addUser(User user) {
