@@ -10,6 +10,7 @@ import com.kora.backend.dto.response.AuthResponse;
 import com.kora.backend.dto.response.ErrorResponse;
 import com.kora.backend.dto.response.MessageResponse;
 import com.kora.backend.dto.response.SignUpResponse;
+import com.kora.backend.dto.response.UserResponse;
 import com.kora.backend.security.AuthenticatedUser;
 import com.kora.backend.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -81,6 +82,18 @@ public class AuthController {
 				request,
 				clientIpAddress(forwardedFor, httpRequest),
 				userAgent);
+	}
+
+	@Operation(summary = "Get the current user", description = "Returns the profile of the caller identified by the access token. The response "
+			+ "never includes credentials or password hashes, and the caller's email-verification "
+			+ "status is reported as-is.", operationId = "getCurrentUser", tags = "Authentication", security = @SecurityRequirement(name = "bearerAuth"))
+	@ApiResponses({
+			@ApiResponse(responseCode = "200", description = "Authenticated user profile", content = @Content(schema = @Schema(implementation = UserResponse.class))),
+			@ApiResponse(responseCode = "401", description = "Missing or invalid access token", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+	})
+	@GetMapping("/me")
+	public UserResponse me(@AuthenticationPrincipal AuthenticatedUser principal) {
+		return authService.me(principal);
 	}
 
 	@Operation(summary = "Refresh a session", description = "Rotates the refresh token and issues a new access token. The caller must be "

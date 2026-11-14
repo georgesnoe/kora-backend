@@ -47,6 +47,8 @@ class OpenApiDocumentationTest {
 		assertThat(yaml).contains("openapi:");
 		assertThat(yaml).contains("/api/auth/sign-up");
 		assertThat(yaml).contains("/api/auth/sign-in");
+		assertThat(yaml).contains("/api/auth/me");
+		assertThat(yaml).contains("getCurrentUser");
 		assertThat(yaml).contains("/api/auth/refresh");
 		assertThat(yaml).contains("/api/auth/sign-out");
 		assertThat(yaml).contains("/api/auth/verify");

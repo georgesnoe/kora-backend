@@ -176,11 +176,18 @@ jobs:
 
           echo "Checking that protected endpoints reject unauthenticated requests"
           status="$(curl -sS -o /dev/null -w '%{http_code}' \
-            -X POST http://localhost:8080/api/auth/refresh \
-            -H 'Content-Type: application/json' \
-            -d '{"refreshToken":"not-a-real-token"}')"
-          echo "POST /api/auth/refresh without a token -> $status"
+            http://localhost:8080/api/auth/me)"
+          echo "GET /api/auth/me without a token -> $status"
           test "$status" = "401"
+
+          for path in refresh sign-out resend-verification; do
+            status="$(curl -sS -o /dev/null -w '%{http_code}' \
+              -X POST "http://localhost:8080/api/auth/$path" \
+              -H 'Content-Type: application/json' \
+              -d '{}')"
+            echo "POST /api/auth/$path without a token -> $status"
+            test "$status" = "401"
+          done
 
           echo "Authentication and documentation smoke tests passed"
 

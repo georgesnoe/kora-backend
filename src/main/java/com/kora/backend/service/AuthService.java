@@ -103,6 +103,19 @@ public class AuthService {
 		return toAuthResponse(user, issuedSession);
 	}
 
+	@Transactional(readOnly = true)
+	public UserResponse me(AuthenticatedUser principal) {
+		if (principal == null) {
+			throw new UnauthorizedException("Authentication is required");
+		}
+
+		User user = userRepository.findById(principal.id())
+				.orElseThrow(() -> new UnauthorizedException(
+						"The authenticated account no longer exists"));
+
+		return UserResponse.from(user);
+	}
+
 	@Transactional
 	public AuthResponse refresh(String refreshToken) {
 		Jwt jwt = jwtService.parseRefreshToken(refreshToken);

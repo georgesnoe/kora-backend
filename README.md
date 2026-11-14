@@ -45,7 +45,7 @@ SHA-256 hashes so that sessions can be revoked server-side.
 
 - Email/password registration with BCrypt password hashing.
 - Email ownership verification using a numeric, single-use, expiring code.
-- Sign-in, sign-out, and refresh-token rotation.
+- Sign-in, sign-out, refresh-token rotation, and current-user profile lookup.
 - Stateless request authentication via signed JWT access tokens.
 - Server-side session revocation: every token is bound to a persisted session (`sid` claim).
 - Role-based and permission-based domain model (roles, permissions, `superAdminOnly` flags).
@@ -165,6 +165,7 @@ Typical first flow:
 2. Open the verification email in Mailpit and copy the 6-digit code.
 3. `POST /api/auth/verify` with `identifier` and `code`.
 4. `POST /api/auth/sign-in` to receive an access token and refresh token.
+5. `GET /api/auth/me` with the access token to confirm the session and read the profile.
 
 ---
 
@@ -300,6 +301,7 @@ error is not a field-validation error.
 | --- | --- | --- | --- | --- |
 | `POST` | `/api/auth/sign-up` | Public | `201` | Create an account and send a verification email |
 | `POST` | `/api/auth/sign-in` | Public | `200` | Authenticate and create a session |
+| `GET` | `/api/auth/me` | Bearer access token | `200` | Return the authenticated user's profile |
 | `POST` | `/api/auth/refresh` | Bearer access token | `200` | Rotate the refresh token and issue a new access token |
 | `POST` | `/api/auth/sign-out` | Bearer access token | `200` | Revoke a session |
 | `POST` | `/api/auth/verify` | Public | `200` | Verify an email address with a JSON body |
@@ -308,9 +310,9 @@ error is not a field-validation error.
 | `GET` | `/actuator/health` | Public | `200` | Service health |
 
 Public routes are `/api/auth/sign-up`, `/api/auth/sign-in`, and both `/api/auth/verify` variants.
-`/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification` require a valid
-access token; the caller's email-verification status is not checked by the security layer. Any other
-route requires a valid access token.
+`/api/auth/me`, `/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification`
+require a valid access token; the caller's email-verification status is not checked by the security
+layer. Any other route requires a valid access token.
 
 ---
 
@@ -623,7 +625,48 @@ Errors:
 
 ---
 
-### 8. Health
+### 8. Get the current user
+
+```http
+GET /api/auth/me
+Authorization: Bearer <accessToken>
+```
+
+Returns the profile bound to the supplied access token. The access token's session must still exist;
+after sign-out, the same token returns `401`.
+
+Response `200 OK`:
+
+```json
+{
+  "id": "61d252f5-d9b2-4760-aee5-972e90083712",
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "emailVerified": true,
+  "image": null,
+  "roles": []
+}
+```
+
+The response never includes credentials or password hashes. Email-verification status is reported
+as-is; the endpoint does not require a verified email.
+
+Errors:
+
+| Status | Code | Cause |
+| --- | --- | --- |
+| `401` | `UNAUTHORIZED` | Missing or invalid access token, or the session was revoked |
+
+`curl`:
+
+```bash
+curl http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+---
+
+### 9. Health
 
 ```http
 GET /actuator/health
@@ -915,8 +958,9 @@ orchestrator level against `GET /actuator/health` rather than relying on an in-i
 2. Loads it locally and asserts it runs as UID/GID `10001:10001` with no `/bin/sh`.
 3. Starts PostgreSQL and runs the container on the host network.
 4. Polls `GET /actuator/health` until it reports `"status":"UP"`.
-5. Verifies that `/v3/api-docs.yaml` is served and that a protected endpoint
-   (`/api/auth/refresh`) returns `401` without a token.
+5. Verifies that `/v3/api-docs.yaml` is served and that protected endpoints
+   (`/api/auth/me`, `/api/auth/refresh`, `/api/auth/sign-out`, `/api/auth/resend-verification`)
+   return `401` without a token.
 
 **Job `publish`**
 
@@ -937,8 +981,9 @@ secret is needed; `GITHUB_TOKEN` is provided by GitHub.
 - Store `JWT_SECRET` in a secret manager; never commit production secrets. Minimum length is
   enforced in code (32 bytes).
 - Access tokens are short-lived; refresh tokens rotate and are stored only as SHA-256 hashes.
-- `/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification` require a valid
-  access token. Email-verification status is not part of the authorization decision.
+- `/api/auth/me`, `/api/auth/refresh`, `/api/auth/sign-out`, and `/api/auth/resend-verification`
+  require a valid access token. Email-verification status is not part of the authorization decision.
+- `/api/auth/me` returns only the caller's own profile; it cannot be used to look up other users.
 - Because refresh requires a valid access token, a client whose access token has expired must sign
   in again rather than refreshing.
 - Deleting a session revokes both token types because access-token authentication checks the session.
